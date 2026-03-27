@@ -2,6 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-slate-950 text-slate-100 antialiased;
+:root {
+  color-scheme: dark;
+
+  /* Cosmic base */
+  --color-cosmic-base: #05060a;
+  --color-cosmic-mid: #0b1020;
+  --color-cosmic-veil: #12182a;
+
+  /* Text */
+  --color-text-primary: #e8eefc;
+  --color-text-muted: #94a3b8;
+  --color-text-faint: #64748b;
+
+  /* Dual-rail: TRON (source) / Solana (destination) */
+  --color-tron: #f59e0b;
+  --color-tron-glow: rgba(245, 158, 11, 0.35);
+  --color-tron-dim: rgba(245, 158, 11, 0.12);
+
+  --color-solana: #22d3ee;
+  --color-solana-glow: rgba(34, 211, 238, 0.35);
+  --color-solana-dim: rgba(34, 211, 238, 0.1);
+
+  /* AI / decision moments */
+  --color-ai: #a78bfa;
+  --color-ai-dim: rgba(167, 139, 250, 0.14);
+
+  /* Surfaces */
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+}
+
+@layer base {
+  body {
+    @apply min-h-screen text-content-primary antialiased;
+    background-color: var(--color-cosmic-base);
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% -20%, var(--color-cosmic-mid), transparent 55%),
+      radial-gradient(ellipse 60% 40% at 100% 50%, rgba(34, 211, 238, 0.06), transparent 45%),
+      radial-gradient(ellipse 50% 35% at 0% 60%, rgba(245, 158, 11, 0.05), transparent 40%);
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+::selection {
+  /* Tailwind opacity modifiers don't apply to CSS-variable colors; use plain CSS */
+  background-color: color-mix(in srgb, var(--color-solana) 25%, transparent);
+  color: var(--color-text-primary);
+}
+
+@layer components {
+  .glass {
+    @apply border border-glass-border bg-glass-bg backdrop-blur-xl;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+      0 24px 48px -24px rgba(0, 0, 0, 0.5);
+  }
+
+  .glass-strong {
+    @apply border border-glass-border bg-glass-highlight backdrop-blur-xl;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+      0 32px 64px -32px rgba(15, 23, 42, 0.8);
+  }
+
+  /* Bridge rail: origin → destination */
+  .bridge-rail {
+    @apply relative flex items-center justify-between gap-3 py-2;
+  }
+
+  .bridge-rail__node {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-xs font-semibold;
+  }
+
+  .bridge-rail__node--tron {
+    border-color: var(--color-tron-dim);
+    background: var(--color-tron-dim);
+    color: var(--color-tron);
+    box-shadow: 0 0 20px var(--color-tron-glow);
+  }
+
+  .bridge-rail__node--solana {
+    border-color: var(--color-solana-dim);
+    background: var(--color-solana-dim);
+    color: var(--color-solana);
+    box-shadow: 0 0 20px var(--color-solana-glow);
+  }
+
+  .bridge-rail__track {
+    @apply relative mx-1 h-px flex-1 overflow-hidden rounded-full bg-white/10;
+  }
+
+  .bridge-rail__track::after {
+    content: "";
+    @apply absolute inset-y-0 left-0 w-1/2 rounded-full;
+    background: linear-gradient(
+      90deg,
+      var(--color-tron),
+      var(--color-solana)
+    );
+    opacity: 0.55;
+    filter: blur(1px);
+  }
 }

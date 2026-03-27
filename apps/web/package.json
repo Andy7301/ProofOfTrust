@@ -11,13 +11,22 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@faremeter/fetch": "^0.19.0",
+    "@faremeter/info": "^0.19.0",
+    "@faremeter/payment-solana": "^0.19.0",
+    "@filoz/synapse-sdk": "^0.40.0",
+    "@google/genai": "^1.46.0",
     "@proof/core": "workspace:*",
     "@proof/domain": "workspace:*",
+    "@solana/web3.js": "^1.98.4",
+    "alkahest-ts": "^0.7.5",
     "clsx": "^2.1.1",
     "next": "^15.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.4",
+    "tronweb": "^6.2.2",
+    "viem": "^2.47.6",
     "zod": "^3.23.8"
   },
   "devDependencies": {

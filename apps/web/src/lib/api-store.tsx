@@ -55,14 +55,19 @@ type ApiContextValue = {
 const ApiContext = createContext<ApiContextValue | null>(null);
 
 async function fetchState(tron: string): Promise<AppState | null> {
-  const res = await fetch("/api/state", {
-    headers: { "X-Tron-Address": tron },
-    cache: "no-store"
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) return null;
-  const data = (await res.json()) as AppState;
-  return data;
+  try {
+    const res = await fetch("/api/state", {
+      headers: { "X-Tron-Address": tron },
+      cache: "no-store"
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) return null;
+    const data = (await res.json()) as AppState;
+    return data;
+  } catch {
+    /* "Failed to fetch" / offline / dev server stopped — do not surface as uncaught */
+    return null;
+  }
 }
 
 export function ApiStoreProvider({ children }: { children: ReactNode }) {
@@ -81,26 +86,35 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
       return;
     }
     void (async () => {
-      let res = await fetch("/api/state", {
-        headers: { "X-Tron-Address": saved },
-        cache: "no-store"
-      });
-      if (res.status === 404) {
-        await fetch("/api/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tronAddress: saved })
-        });
-        res = await fetch("/api/state", {
+      try {
+        let res = await fetch("/api/state", {
           headers: { "X-Tron-Address": saved },
           cache: "no-store"
         });
+        if (res.status === 404) {
+          try {
+            await fetch("/api/session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ tronAddress: saved })
+            });
+          } catch {
+            /* network — skip bootstrap */
+          }
+          res = await fetch("/api/state", {
+            headers: { "X-Tron-Address": saved },
+            cache: "no-store"
+          });
+        }
+        if (res.ok) {
+          const data = (await res.json()) as AppState;
+          setState(data);
+        }
+      } catch {
+        /* Failed to fetch: stay empty until connect or a later sync succeeds */
+      } finally {
+        setReady(true);
       }
-      if (res.ok) {
-        const data = (await res.json()) as AppState;
-        setState(data);
-      }
-      setReady(true);
     })();
   }, []);
 
@@ -120,11 +134,25 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
   const connect = useCallback(async () => {
     const { requestTronLinkAddress } = await import("@/lib/tronlink");
     const address = await requestTronLinkAddress();
-    await fetch("/api/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tronAddress: address })
-    });
+    try {
+      const res = await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tronAddress: address })
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || `Session failed (${res.status})`);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg === "Failed to fetch" || e instanceof TypeError) {
+        throw new Error(
+          "Cannot reach the app API (network error). If you are developing, run the Next dev server (e.g. pnpm dev) and open the app from that origin."
+        );
+      }
+      throw e;
+    }
     localStorage.setItem("proof_wallet", address);
     await sync(address);
   }, [sync]);

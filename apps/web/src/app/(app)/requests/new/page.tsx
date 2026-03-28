@@ -2,14 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMockStore } from "@/lib/mock-store";
 
 export default function NewRequestPage() {
   const router = useRouter();
   const { createRequest } = useMockStore();
   const [description, setDescription] = useState("");
-  const [targetService, setTargetService] = useState("https://api.demo/x402/premium");
+  const [targetService, setTargetService] = useState("http://localhost:3000/api/x402/demo");
+
+  useEffect(() => {
+    setTargetService(`${window.location.origin}/api/x402/demo`);
+  }, []);
   const [amount, setAmount] = useState("18");
   const [urgency, setUrgency] = useState<"NORMAL" | "HIGH" | "URGENT">("NORMAL");
   const [error, setError] = useState<string | null>(null);

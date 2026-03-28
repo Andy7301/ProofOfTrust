@@ -10,6 +10,14 @@ export const serverEnv = {
   get geminiApiKey() {
     return e("GEMINI_API_KEY");
   },
+  /** e.g. gemini-3-flash-preview — override with GEMINI_MODEL */
+  get geminiModel() {
+    return e("GEMINI_MODEL") ?? "gemini-3-flash-preview";
+  },
+  /** When 1, do not fall back to heuristic extraction on 429 / quota errors */
+  get geminiStrictQuota() {
+    return process.env.GEMINI_STRICT_QUOTA === "1";
+  },
   get solanaRpcUrl() {
     return process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
   },

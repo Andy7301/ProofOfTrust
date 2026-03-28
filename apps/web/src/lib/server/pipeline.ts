@@ -13,7 +13,6 @@ import { loadDb, mutateDb } from "./db";
 import { genId, nowIso } from "./ids";
 import { eventApproved, eventRejected } from "./reputation";
 import { optionalAuditPieceCid } from "./synapse";
-import { executePaidFetch } from "./x402-pay";
 
 function patchRequest(db: { requests: PurchaseRequest[] }, id: string, patch: Partial<PurchaseRequest>) {
   const i = db.requests.findIndex((r) => r.id === id);
@@ -77,6 +76,7 @@ export async function runPurchasePipeline(requestId: string): Promise<void> {
   const { request: req3 } = await loadReqUser(requestId);
   if (!req3) return;
 
+  const { executePaidFetch } = await import("./x402-pay");
   const paid = await executePaidFetch(req3.targetService);
 
   const alkahestRef = await optionalAlkahestRef();

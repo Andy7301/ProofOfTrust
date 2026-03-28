@@ -59,7 +59,6 @@ function seedRequests(userId: string): PurchaseRequest[] {
       description: "Premium market intel API for quarterly review.",
       targetService: "https://api.demo/x402/research",
       requestedAmount: 18,
-      urgency: "NORMAL",
       suspicionFlags: [],
       status: "PAID",
       aiExtractedData: {
@@ -200,7 +199,6 @@ type MockContextValue = {
     description: string;
     targetService: string;
     requestedAmount: number;
-    urgency: PurchaseRequest["urgency"];
   }) => Promise<string>;
   repayDebt: (debtId: string, txHash: string) => Promise<void>;
   repayDebtFromWallet: (debtId: string) => Promise<void>;
@@ -362,7 +360,6 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       description: string;
       targetService: string;
       requestedAmount: number;
-      urgency: PurchaseRequest["urgency"];
     }) => {
       if (!state.user) throw new Error("Not connected");
       const requestId = genId("req");
@@ -372,7 +369,6 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
         description: input.description,
         targetService: input.targetService,
         requestedAmount: input.requestedAmount,
-        urgency: input.urgency,
         suspicionFlags: [],
         status: "PENDING",
         createdAt: nowIso(),

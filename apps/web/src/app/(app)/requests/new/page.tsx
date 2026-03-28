@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { perRequestMaxUsd } from "@/lib/per-request-max";
 import { useMockStore } from "@/lib/mock-store";
 
 export default function NewRequestPage() {
   const router = useRouter();
-  const { createRequest } = useMockStore();
+  const { createRequest, state } = useMockStore();
+  const maxPerRequest = state.user ? perRequestMaxUsd(state.user) : null;
   const [description, setDescription] = useState("");
   const [targetService, setTargetService] = useState("http://localhost:3000/api/x402/demo");
 
@@ -15,7 +17,6 @@ export default function NewRequestPage() {
     setTargetService(`${window.location.origin}/api/x402/demo`);
   }, []);
   const [amount, setAmount] = useState("18");
-  const [urgency, setUrgency] = useState<"NORMAL" | "HIGH" | "URGENT">("NORMAL");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -27,13 +28,20 @@ export default function NewRequestPage() {
       setError("Fill all fields with a valid amount.");
       return;
     }
+    if (maxPerRequest != null && maxPerRequest <= 0) {
+      setError("No available credit for new requests. Repay an open balance first.");
+      return;
+    }
+    if (maxPerRequest != null && n > maxPerRequest) {
+      setError(`Maximum for one request is $${maxPerRequest}.`);
+      return;
+    }
     setSubmitting(true);
     try {
       const id = await createRequest({
         description: description.trim(),
         targetService: targetService.trim(),
-        requestedAmount: n,
-        urgency
+        requestedAmount: n
       });
       router.push(`/requests/${id}`);
     } catch {
@@ -74,31 +82,24 @@ export default function NewRequestPage() {
             className="w-full rounded-xl border border-glass-border bg-black/30 px-3 py-2 font-mono text-sm text-content-primary outline-none focus:border-solana/50"
           />
         </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-1">
-            <span className="text-xs font-medium text-content-muted">Expected cost (USD)</span>
-            <input
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              type="number"
-              min={1}
-              step={1}
-              className="w-full rounded-xl border border-glass-border bg-black/30 px-3 py-2 text-sm text-content-primary outline-none focus:border-solana/50"
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className="text-xs font-medium text-content-muted">Urgency</span>
-            <select
-              value={urgency}
-              onChange={(e) => setUrgency(e.target.value as typeof urgency)}
-              className="w-full rounded-xl border border-glass-border bg-black/30 px-3 py-2 text-sm text-content-primary outline-none focus:border-solana/50"
-            >
-              <option value="NORMAL">Normal</option>
-              <option value="HIGH">High</option>
-              <option value="URGENT">Urgent</option>
-            </select>
-          </label>
-        </div>
+        <label className="block space-y-1">
+          <span className="text-xs font-medium text-content-muted">Expected cost (USD)</span>
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            type="number"
+            min={1}
+            max={maxPerRequest != null && maxPerRequest > 0 ? maxPerRequest : undefined}
+            step={1}
+            className="w-full rounded-xl border border-glass-border bg-black/30 px-3 py-2 text-sm text-content-primary outline-none focus:border-solana/50"
+          />
+          {maxPerRequest != null ? (
+            <p className="text-xs text-content-faint">
+              Maximum per request: <span className="text-content-muted">${maxPerRequest}</span>
+              {maxPerRequest <= 0 ? " — repay outstanding balance to free capacity." : ""}
+            </p>
+          ) : null}
+        </label>
         {error ? <p className="text-sm text-rose-300">{error}</p> : null}
         <button
           type="submit"

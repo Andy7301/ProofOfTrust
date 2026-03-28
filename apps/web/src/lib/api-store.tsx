@@ -45,7 +45,6 @@ type ApiContextValue = {
     description: string;
     targetService: string;
     requestedAmount: number;
-    urgency: PurchaseRequestWithFilecoin["urgency"];
   }) => Promise<string>;
   repayDebt: (debtId: string, txHash: string) => Promise<void>;
   /** Fetch quote + TronLink TRX transfer + confirm with API. */
@@ -167,7 +166,6 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
       description: string;
       targetService: string;
       requestedAmount: number;
-      urgency: PurchaseRequestWithFilecoin["urgency"];
     }) => {
       const tron = localStorage.getItem("proof_wallet");
       if (!tron) throw new Error("Not connected");

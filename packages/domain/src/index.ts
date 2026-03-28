@@ -57,7 +57,6 @@ export interface PurchaseRequest {
   targetService: string;
   requestedAmount: number;
   uploadedImageUrl?: string;
-  urgency: "NORMAL" | "HIGH" | "URGENT";
   aiExtractedData?: AiExtractedData;
   aiConfidence?: number;
   suspicionFlags: string[];

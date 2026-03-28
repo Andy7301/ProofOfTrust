@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { PurchaseRequestWithFilecoin } from "@proof/domain";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { perRequestMaxUsd } from "@/lib/per-request-max";
 import { useMockStore } from "@/lib/mock-store";
 import { requestAmountDisplay, requestDescriptionLine, requestTargetLine } from "@/lib/request-display";
 
@@ -28,6 +29,7 @@ function statusBadge(r: PurchaseRequestWithFilecoin) {
 export default function DashboardPage() {
   const { state } = useMockStore();
   const user = state.user!;
+  const maxPerRequest = perRequestMaxUsd(user);
 
   const settled = state.requests.filter((r) => r.filecoinAudit);
   const inProgress = state.requests.filter((r) => !r.filecoinAudit);
@@ -41,13 +43,14 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           label="Reputation"
           value={`${Math.round(user.reputationScore * 100)}%`}
           helper="Trust score"
         />
-        <StatCard label="Credit limit" value={`$${user.creditLimit}`} helper="Available headroom" />
+        <StatCard label="Credit limit" value={`$${user.creditLimit}`} helper="Total facility" />
+        <StatCard label="Max per request" value={`$${maxPerRequest}`} helper="Policy and available credit" />
         <StatCard label="Outstanding" value={`$${user.outstandingDebt}`} helper="To repay on TRON" />
         <StatCard label="Open balances" value={`${state.debts.filter((d) => d.status === "OPEN").length}`} helper="Active" />
       </section>

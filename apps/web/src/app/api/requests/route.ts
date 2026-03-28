@@ -14,8 +14,7 @@ export const maxDuration = 300;
 const createSchema = z.object({
   description: z.string().min(1).max(8000),
   targetService: z.string().url(),
-  requestedAmount: z.number().positive().max(1_000_000),
-  urgency: z.enum(["NORMAL", "HIGH", "URGENT"])
+  requestedAmount: z.number().positive().max(1_000_000)
 });
 
 export async function GET(req: NextRequest) {
@@ -68,7 +67,6 @@ export async function POST(req: NextRequest) {
       description: parsed.data.description,
       targetService: parsed.data.targetService,
       requestedAmount: parsed.data.requestedAmount,
-      urgency: parsed.data.urgency,
       suspicionFlags: [],
       status: "PENDING",
       createdAt: t,

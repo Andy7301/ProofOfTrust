@@ -11,7 +11,6 @@ export const latestRequest = {
   description: "Need premium API summary for competitor intel brief.",
   targetService: "x402 /premium/research-brief",
   requestedAmount: 18,
-  urgency: "HIGH",
   aiConfidence: 0.86,
   suspicionFlags: ["edited_receipt_metadata"]
 };

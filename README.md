@@ -19,9 +19,10 @@ Orchestration: **pnpm** workspaces + **Turborepo** (`turbo.json`).
 
 ## Quick start
 
+Create **`apps/web/.env.local`** and paste variables from [`.env.example`](.env.example) (or `cp .env.example apps/web/.env.local` and edit). Next.js only auto-loads env files from **`apps/web`**, not the repo root.
+
 ```bash
 pnpm install
-cp .env.example .env          # optional: edit values before first run
 pnpm dev
 ```
 
@@ -48,20 +49,22 @@ Package-specific scripts live in each `package.json` (e.g. `apps/web`).
 
 ## Environment variables
 
-**Authoritative template:** [`.env.example`](.env.example) — copy to **repo root** `.env` and/or **`apps/web/.env.local`**.
+**Required for local dev:** **`apps/web/.env.local`**. Use [`.env.example`](.env.example) as the checklist of keys; copy or merge into that file.
 
-**Loading order:** Next.js loads `apps/web/.env*` automatically. Root `.env` / `.env.local` are merged in **`apps/web/next.config.ts`** via **`apps/web/load-root-env.ts`** (Node only — do not import that module from `instrumentation` or client bundles). Restart `pnpm dev` after changes.
+**Optional root env:** A repo-root `.env` or `.env.local` is merged in **`apps/web/next.config.ts`** via **`apps/web/load-root-env.ts`** so you can keep secrets at the monorepo root if you prefer (Node only — do not import that module from `instrumentation` or client bundles). Next still reads **`apps/web/.env.local`** first for anything you put there.
 
 **Gotchas:**
 
 - If a variable is set **empty** in `apps/web/.env*`, it can **override** a non-empty value from the root — remove the line or set a real value.
 - **`NEXT_PUBLIC_USE_MOCK_CLIENT=1`** forces an in-browser mock store instead of the JSON API; unset it unless you want that behavior.
 
+Restart **`pnpm dev`** after env changes.
+
 **High-level groups:**
 
 - **App / URLs:** `NEXT_PUBLIC_*`, `NEXT_PUBLIC_BASE_URL`
 - **Solana x402 (agent payer):** `SOLANA_RPC_URL`, `SOLANA_AGENT_PRIVATE_KEY`, `SOLANA_USDC_MINT`, `NEXT_PUBLIC_X402_DEMO_PAY_TO`, `SOLANA_X402_PAYMENT_MICRO_USDC`, `SOLANA_X402_DISABLE`, etc.
-- **TRON repayment:** `TRON_RPC_URL`, `TRON_PRIVATE_KEY`, `TRON_REPAY_RECEIVER`, `TRON_REPAYMENT_MODE`
+- **TRON repayment:** `TRON_RPC_URL`, `TRON_REPAY_RECEIVER`, `TRON_REPAYMENT_MODE`, `TRON_SUN_PER_DEBT_DOLLAR`
 - **Gemini (AI):** `GEMINI_API_KEY`, `AI_PROVIDER=mock` to force mock without a key
 - **Filecoin / Synapse:** `FILECOIN_CALIBRATION_RPC_URL`, `SYNAPSE_PRIVATE_KEY`, `FILECOIN_AUDIT_MODE`
 
@@ -73,13 +76,5 @@ Representative routes under `apps/web/src/app/api/`:
 - **`GET /api/me`**, **`GET /api/state`** — current user and aggregated state
 - **`/api/requests`**, **`/api/requests/[id]`** — purchase requests
 - **`/api/debts/[id]/repay-quote`**, **`POST /api/debts/[id]/repay`** — TRON repayment flow
-- **`GET /api/x402/demo`** — x402 v2 demo merchant (see below)
+- **`GET /api/x402/demo`** — x402 v2 paywalled JSON (dev / testing)
 - **`GET /api/health`** — health check
-
-## x402 on Solana
-
-The server agent pays protected URLs with **`@faremeter/fetch`** and **`@faremeter/payment-solana/exact`** (Faremeter-style stack). The in-app demo merchant is **`GET /api/x402/demo`**, using x402 **v2** headers (`PAYMENT-REQUIRED` / `PAYMENT-SIGNATURE`). Other stacks may use **v1** `X-PAYMENT` or facilitators; the protocol idea is the same.
-
-Fund the **agent** wallet (devnet SOL + devnet USDC) before live payments; set **`NEXT_PUBLIC_X402_DEMO_PAY_TO`** to the base58 address that should receive USDC from the demo. Use **`SOLANA_X402_DISABLE=1`** to avoid on-chain spend while keeping keys in `.env`.
-
-Background, SDK comparison, and minimal native examples: **[How to get started with x402 on Solana](https://solana.com/developers/guides/getstarted/intro-to-x402)** (Solana Foundation).

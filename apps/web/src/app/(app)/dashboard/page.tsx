@@ -6,7 +6,23 @@ import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { perRequestMaxUsd } from "@/lib/per-request-max";
 import { useMockStore } from "@/lib/mock-store";
+import { displayPieceCid } from "@/lib/piece-cid";
 import { requestAmountDisplay, requestDescriptionLine, requestTargetLine } from "@/lib/request-display";
+
+function filecoinCidRow(r: PurchaseRequestWithFilecoin) {
+  const cid = r.auditPieceCid?.trim() || r.filecoinAudit?.pieceCid?.trim();
+  if (!cid) return null;
+  const verified = Boolean(r.filecoinAudit);
+  return (
+    <p
+      className={`mt-1 font-mono text-[11px] leading-relaxed ${verified ? "text-emerald-200/80" : "text-amber-200/80"}`}
+      title={cid}
+    >
+      <span className="text-content-faint">Filecoin · Piece CID </span>
+      {displayPieceCid(cid)}
+    </p>
+  );
+}
 
 function statusBadge(r: PurchaseRequestWithFilecoin) {
   if (r.filecoinAudit) {
@@ -87,6 +103,7 @@ export default function DashboardPage() {
                   {r.filecoinAudit?.solanaTx ? (
                     <p className="mt-1 text-xs text-content-muted">Payment recorded on Solana.</p>
                   ) : null}
+                  {filecoinCidRow(r)}
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-xs text-content-muted">${requestAmountDisplay(r)}</span>
@@ -114,6 +131,7 @@ export default function DashboardPage() {
                     {statusBadge(r)}
                   </div>
                   <p className="truncate font-mono text-xs text-content-faint">{requestTargetLine(r)}</p>
+                  {filecoinCidRow(r)}
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <StatusBadge status={r.status} />

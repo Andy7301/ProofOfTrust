@@ -198,13 +198,10 @@ export default function RequestDetailPage() {
                   />
                 </div>
               ) : null}
-              {request.auditPieceCid.length > 24 ? (
-                <p className="pt-1 font-mono text-[11px] text-content-faint">
-                  Ref {request.auditPieceCid.slice(0, 18)}…
-                </p>
-              ) : (
-                <p className="pt-1 font-mono text-[11px] text-content-faint">Ref {request.auditPieceCid}</p>
-              )}
+              <div className="pt-1">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-content-faint">Filecoin · Piece CID</p>
+                <p className="mt-0.5 break-all font-mono text-[11px] text-content-muted">{request.auditPieceCid}</p>
+              </div>
             </dl>
           ) : (
             <p className="text-content-muted">We’re confirming this settlement. Check back shortly.</p>

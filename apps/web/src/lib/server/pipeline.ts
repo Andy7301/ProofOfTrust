@@ -15,6 +15,19 @@ import { genId, nowIso } from "./ids";
 import { eventApproved, eventRejected } from "./reputation";
 import { uploadPurchaseAuditToFilecoin } from "./synapse";
 
+/** Non-sensitive summary for audit trails — avoids putting x402 payload/secrets on-chain or in Filecoin JSON. */
+function safeX402ResultSummary(bodyText: string, maxMessage = 220): string {
+  const t = bodyText.trim();
+  try {
+    const j = JSON.parse(t) as Record<string, unknown>;
+    const paid = j.paid;
+    const message = typeof j.message === "string" ? j.message.slice(0, maxMessage) : undefined;
+    return JSON.stringify({ paid, message });
+  } catch {
+    return t.slice(0, maxMessage);
+  }
+}
+
 function patchRequest(db: { requests: PurchaseRequest[] }, id: string, patch: Partial<PurchaseRequest>) {
   const i = db.requests.findIndex((r) => r.id === id);
   if (i < 0) return;
@@ -108,22 +121,24 @@ async function runPurchasePipelineSteps(requestId: string): Promise<void> {
   const { executePaidFetch } = await import("./x402-pay");
   const paid = await executePaidFetch(req3.targetService);
 
-  const attestationPayload = {
+  const resultSummary = safeX402ResultSummary(paid.bodyText);
+
+  const alkahestPayload = {
     requestId: req3.id,
     userId: req3.userId,
     paid: paid.ok,
     solanaTx: paid.transactionSignature,
     amount: req3.requestedAmount,
     targetService: req3.targetService,
-    x402Status: paid.x402Status,
-    resultPreview: paid.bodyText.slice(0, 800)
+    x402Status: paid.x402Status
   };
 
   const [alkahestRef, auditPieceCid] = await Promise.all([
-    recordAlkahestPurchaseAttestation(attestationPayload),
+    recordAlkahestPurchaseAttestation(alkahestPayload),
     uploadPurchaseAuditToFilecoin({
-      ...attestationPayload,
-      description: req3.description
+      ...alkahestPayload,
+      description: req3.description,
+      resultPreview: resultSummary
     })
   ]);
 

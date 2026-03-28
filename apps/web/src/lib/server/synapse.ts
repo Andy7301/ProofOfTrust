@@ -56,9 +56,8 @@ export async function uploadPurchaseAuditToFilecoin(payload: FilecoinAuditPayloa
       await prepared.transaction.execute();
     }
 
-    const result = await synapse.storage.upload(bytes, {
-      contexts: [ctx],
-      withCDN: false,
+    // Use context.upload — avoids StorageManager rejecting `contexts` + `withCDN` (even `withCDN: false`).
+    const result = await ctx.upload(bytes, {
       pieceMetadata: {
         requestId: payload.requestId,
         userId: payload.userId

@@ -17,7 +17,6 @@ import {
   useState,
   type ReactNode
 } from "react";
-import { broadcastTronTrxRepayment } from "./tron-repay-wallet";
 
 type AppState = {
   user: User | null;
@@ -225,6 +224,7 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
       if (!quote.toAddress || quote.amountSun == null) {
         throw new Error("Invalid repay quote from server.");
       }
+      const { broadcastTronTrxRepayment } = await import("@/lib/tron-repay-wallet");
       const txid = await broadcastTronTrxRepayment({
         from: tron,
         to: quote.toAddress,

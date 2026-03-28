@@ -1,7 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getSolanaAgentPublicKeyBase58 } from "@/lib/server/solana-agent";
-import { getSolanaUsdcMintBase58, getSolanaX402Network } from "@/lib/server/solana-x402-config";
+import {
+  getSolanaUsdcMintBase58,
+  getSolanaX402AcceptNetwork
+} from "@/lib/server/solana-x402-config";
 
 export const runtime = "nodejs";
 
@@ -48,7 +51,7 @@ function buildPaymentRequired(req: NextRequest): PaymentRequiredV2 {
     process.env.SOLANA_X402_PAYMENT_MICRO_USDC?.trim() || "1000";
   const accept: PaymentRequiredV2["accepts"][0] = {
     scheme: "exact",
-    network: getSolanaX402Network(),
+    network: getSolanaX402AcceptNetwork(),
     /** Smallest units (USDC has 6 decimals) — default 0.001 USDC */
     amount: micro,
     asset: getSolanaUsdcMintBase58(),

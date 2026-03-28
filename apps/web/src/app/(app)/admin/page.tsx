@@ -11,6 +11,7 @@ import {
   getPaymentForRequest,
   useMockStore
 } from "@/lib/mock-store";
+import { requestDescriptionLine } from "@/lib/request-display";
 
 export default function AdminPage() {
   const { state } = useMockStore();
@@ -44,7 +45,7 @@ export default function AdminPage() {
               return (
                 <tr key={r.id} className="border-b border-white/5">
                   <td className="max-w-xs px-4 py-3">
-                    <p className="truncate text-content-primary">{r.description}</p>
+                    <p className="truncate text-content-primary">{requestDescriptionLine(r, 120)}</p>
                     <p className="truncate font-mono text-xs text-content-faint">{r.id}</p>
                   </td>
                   <td className="px-4 py-3">

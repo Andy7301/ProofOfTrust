@@ -1,5 +1,3 @@
-import { isMockTronRepay } from "./env";
-
 /** Base58 treasury that receives TRX repayments (required for real wallet repay + verification). */
 export function getTronRepayTreasuryBase58(): string | null {
   const a = process.env.TRON_REPAY_RECEIVER?.trim();

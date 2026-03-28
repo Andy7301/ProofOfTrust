@@ -2,8 +2,9 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { after } from "next/server";
 import { z } from "zod";
-import { loadDb, mutateDb } from "@/lib/server/db";
 import { getTronAddress } from "@/lib/server/auth";
+import { loadDb, mutateDb } from "@/lib/server/db";
+import { enrichRequestsWithFilecoinAudits } from "@/lib/server/filecoin-enrich";
 import { genId, nowIso } from "@/lib/server/ids";
 import { runPurchasePipeline } from "@/lib/server/pipeline";
 
@@ -27,7 +28,8 @@ export async function GET(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
-  const requests = db.requests.filter((r) => r.userId === user.id);
+  const raw = db.requests.filter((r) => r.userId === user.id);
+  const requests = await enrichRequestsWithFilecoinAudits(raw);
   return NextResponse.json({ requests });
 }
 

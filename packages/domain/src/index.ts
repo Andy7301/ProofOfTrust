@@ -34,6 +34,22 @@ export interface AiExtractedData {
   extractedJustification: string;
 }
 
+/** Audit JSON fetched from Filecoin (Synapse); attached by the API, not stored in the JSON DB. */
+export interface FilecoinAuditRecord {
+  pieceCid: string;
+  kind?: string;
+  requestId?: string;
+  userId?: string;
+  paid?: boolean;
+  solanaTx?: string;
+  amount?: number;
+  targetService?: string;
+  description?: string;
+  x402Status?: string;
+  resultPreview?: string;
+  at?: string;
+}
+
 export interface PurchaseRequest {
   id: string;
   userId: string;
@@ -46,13 +62,16 @@ export interface PurchaseRequest {
   aiConfidence?: number;
   suspicionFlags: string[];
   status: RequestStatus;
-  /** Optional Alkahest / EVM escrow attestation id or tx note */
-  alkahestRef?: string;
-  /** Optional Filecoin PieceCID after audit upload */
+  /** Optional Filecoin Onchain Cloud PieceCID (Synapse warm-storage audit JSON) */
   auditPieceCid?: string;
   createdAt: string;
   updatedAt: string;
 }
+
+export type PurchaseRequestWithFilecoin = PurchaseRequest & {
+  /** `null` = fetch failed; `undefined` = no piece CID or mock Filecoin. */
+  filecoinAudit?: FilecoinAuditRecord | null;
+};
 
 export interface ApprovalDecision {
   id: string;

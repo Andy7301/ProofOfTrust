@@ -8,7 +8,6 @@ import type {
   User
 } from "@proof/domain";
 import { extractPurchaseSignals } from "./ai";
-import { recordAlkahestPurchaseAttestation } from "./alkahest";
 import { buildApproval, decideRequest } from "./decision";
 import { loadDb, mutateDb } from "./db";
 import { genId, nowIso } from "./ids";
@@ -123,7 +122,7 @@ async function runPurchasePipelineSteps(requestId: string): Promise<void> {
 
   const resultSummary = safeX402ResultSummary(paid.bodyText);
 
-  const alkahestPayload = {
+  const auditPayload = {
     requestId: req3.id,
     userId: req3.userId,
     paid: paid.ok,
@@ -133,14 +132,11 @@ async function runPurchasePipelineSteps(requestId: string): Promise<void> {
     x402Status: paid.x402Status
   };
 
-  const [alkahestRef, auditPieceCid] = await Promise.all([
-    recordAlkahestPurchaseAttestation(alkahestPayload),
-    uploadPurchaseAuditToFilecoin({
-      ...alkahestPayload,
-      description: req3.description,
-      resultPreview: resultSummary
-    })
-  ]);
+  const auditPieceCid = await uploadPurchaseAuditToFilecoin({
+    ...auditPayload,
+    description: req3.description,
+    resultPreview: resultSummary
+  });
 
   const resultPayload =
     paid.ok || !paid.error
@@ -167,7 +163,6 @@ async function runPurchasePipelineSteps(requestId: string): Promise<void> {
       db.payments.unshift(payment);
       patchRequest(db, requestId, {
         status: "FAILED",
-        alkahestRef,
         auditPieceCid
       });
     });
@@ -190,7 +185,6 @@ async function runPurchasePipelineSteps(requestId: string): Promise<void> {
     db.payments.unshift(payment);
     patchRequest(db, requestId, {
       status: "PAID",
-      alkahestRef,
       auditPieceCid
     });
     db.debts.unshift(debt);

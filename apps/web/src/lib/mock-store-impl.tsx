@@ -5,6 +5,7 @@ import type {
   DebtRecord,
   FrontedPayment,
   PurchaseRequest,
+  PurchaseRequestWithFilecoin,
   ReputationEvent,
   User
 } from "@proof/domain";
@@ -21,14 +22,12 @@ import {
 
 type MockState = {
   user: User | null;
-  requests: PurchaseRequest[];
+  requests: PurchaseRequestWithFilecoin[];
   debts: DebtRecord[];
   approvals: ApprovalDecision[];
   payments: FrontedPayment[];
   reputationEvents: ReputationEvent[];
 };
-
-const SIM_ADDRESS = "TNd7SimulatedProofOfTrust111111111111";
 
 function nowIso() {
   return new Date().toISOString();
@@ -195,7 +194,7 @@ type MockContextValue = {
   state: MockState;
   /** False until client has hydrated wallet from localStorage (avoid redirect flash). */
   ready: boolean;
-  connect: (simulated: boolean) => Promise<void>;
+  connect: () => Promise<void>;
   disconnect: () => void;
   createRequest: (input: {
     description: string;
@@ -232,16 +231,9 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     setReady(true);
   }, []);
 
-  const connect = useCallback(async (simulated: boolean) => {
-    let address: string;
-    if (simulated) {
-      address = SIM_ADDRESS;
-      localStorage.setItem("proof_sim", "1");
-    } else {
-      const { requestTronLinkAddress } = await import("@/lib/tronlink");
-      address = await requestTronLinkAddress();
-      localStorage.removeItem("proof_sim");
-    }
+  const connect = useCallback(async () => {
+    const { requestTronLinkAddress } = await import("@/lib/tronlink");
+    const address = await requestTronLinkAddress();
     dispatch({ type: "CONNECT", address });
     localStorage.setItem("proof_wallet", address);
   }, []);
@@ -249,7 +241,6 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
   const disconnect = useCallback(() => {
     dispatch({ type: "DISCONNECT" });
     localStorage.removeItem("proof_wallet");
-    localStorage.removeItem("proof_sim");
   }, []);
 
   const runPipeline = useCallback((initial: PurchaseRequest) => {

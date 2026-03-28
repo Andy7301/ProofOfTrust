@@ -31,6 +31,11 @@ export function tronExplorerHomeUrl(): string {
 }
 
 /** TronScan transaction URL (Nile, Shasta, or mainnet). */
+/** Filecoin Calibration / Onchain Cloud context for a Synapse piece CID (informational). */
+export function filecoinPieceDocsUrl(): string {
+  return "https://docs.filecoin.cloud/getting-started/";
+}
+
 export function tronTxExplorerUrl(txHash: string): string | null {
   const h = txHash.trim();
   if (!h || h.length < 8) return null;

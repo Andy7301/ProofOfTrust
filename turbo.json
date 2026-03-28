@@ -15,6 +15,9 @@
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
+    "@proof/web#typecheck": {
+      "dependsOn": ["@proof/web#build", "^typecheck"]
+    },
     "format": {}
   }
 }

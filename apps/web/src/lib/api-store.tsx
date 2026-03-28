@@ -4,7 +4,7 @@ import type {
   ApprovalDecision,
   DebtRecord,
   FrontedPayment,
-  PurchaseRequest,
+  PurchaseRequestWithFilecoin,
   ReputationEvent,
   User
 } from "@proof/domain";
@@ -20,14 +20,12 @@ import {
 
 type AppState = {
   user: User | null;
-  requests: PurchaseRequest[];
+  requests: PurchaseRequestWithFilecoin[];
   debts: DebtRecord[];
   approvals: ApprovalDecision[];
   payments: FrontedPayment[];
   reputationEvents: ReputationEvent[];
 };
-
-const SIM_ADDRESS = "TNd7SimulatedProofOfTrust111111111111";
 
 const empty: AppState = {
   user: null,
@@ -41,13 +39,13 @@ const empty: AppState = {
 type ApiContextValue = {
   state: AppState;
   ready: boolean;
-  connect: (simulated: boolean) => Promise<void>;
+  connect: () => Promise<void>;
   disconnect: () => void;
   createRequest: (input: {
     description: string;
     targetService: string;
     requestedAmount: number;
-    urgency: PurchaseRequest["urgency"];
+    urgency: PurchaseRequestWithFilecoin["urgency"];
   }) => Promise<string>;
   repayDebt: (debtId: string, txHash: string) => Promise<void>;
   /** Fetch quote + TronLink TRX transfer + confirm with API. */
@@ -106,7 +104,7 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  const hasPipelinePending = state.requests.some((r) =>
+  const hasPipelinePending = state.requests.some((r: PurchaseRequestWithFilecoin) =>
     ["PENDING", "AI_VERIFIED", "APPROVED", "X402_PENDING"].includes(r.status)
   );
 
@@ -119,32 +117,21 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(id);
   }, [state.user, hasPipelinePending, sync]);
 
-  const connect = useCallback(
-    async (simulated: boolean) => {
-      let address: string;
-      if (simulated) {
-        address = SIM_ADDRESS;
-        localStorage.setItem("proof_sim", "1");
-      } else {
-        const { requestTronLinkAddress } = await import("@/lib/tronlink");
-        address = await requestTronLinkAddress();
-        localStorage.removeItem("proof_sim");
-      }
-      await fetch("/api/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tronAddress: address })
-      });
-      localStorage.setItem("proof_wallet", address);
-      await sync(address);
-    },
-    [sync]
-  );
+  const connect = useCallback(async () => {
+    const { requestTronLinkAddress } = await import("@/lib/tronlink");
+    const address = await requestTronLinkAddress();
+    await fetch("/api/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tronAddress: address })
+    });
+    localStorage.setItem("proof_wallet", address);
+    await sync(address);
+  }, [sync]);
 
   const disconnect = useCallback(() => {
     setState(empty);
     localStorage.removeItem("proof_wallet");
-    localStorage.removeItem("proof_sim");
   }, []);
 
   const createRequest = useCallback(
@@ -152,7 +139,7 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
       description: string;
       targetService: string;
       requestedAmount: number;
-      urgency: PurchaseRequest["urgency"];
+      urgency: PurchaseRequestWithFilecoin["urgency"];
     }) => {
       const tron = localStorage.getItem("proof_wallet");
       if (!tron) throw new Error("Not connected");
@@ -200,10 +187,6 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
     async (debtId: string) => {
       const tron = localStorage.getItem("proof_wallet");
       if (!tron) throw new Error("Not connected");
-      if (localStorage.getItem("proof_sim") === "1") {
-        await repayDebt(debtId, `sim_repay_${Date.now()}`);
-        return;
-      }
       const q = await fetch(`/api/debts/${encodeURIComponent(debtId)}/repay-quote`, {
         headers: { "X-Tron-Address": tron },
         cache: "no-store"

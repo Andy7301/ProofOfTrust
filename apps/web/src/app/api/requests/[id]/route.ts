@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { loadDb } from "@/lib/server/db";
 import { getTronAddress } from "@/lib/server/auth";
+import { loadDb } from "@/lib/server/db";
+import { enrichRequestWithFilecoinAudit } from "@/lib/server/filecoin-enrich";
 
 export const runtime = "nodejs";
 
@@ -16,10 +17,11 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
-  const request = db.requests.find((r) => r.id === id && r.userId === user.id);
-  if (!request) {
+  const raw = db.requests.find((r) => r.id === id && r.userId === user.id);
+  if (!raw) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+  const request = await enrichRequestWithFilecoinAudit(raw);
   const approval = db.approvals.find((a) => a.requestId === id);
   const payment = db.payments.find((p) => p.requestId === id);
   const debt = db.debts.find((d) => d.requestId === id);

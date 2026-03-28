@@ -17,20 +17,7 @@ export function WalletConnectCard() {
     setError(null);
     setBusy("connecting");
     try {
-      await connect(false);
-      router.push("/dashboard");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy("idle");
-    }
-  };
-
-  const handleSimulated = async () => {
-    setError(null);
-    setBusy("connecting");
-    try {
-      await connect(true);
+      await connect();
       router.push("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -69,7 +56,7 @@ export function WalletConnectCard() {
         </div>
       </div>
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-6">
         <button
           type="button"
           onClick={() => void handleConnectTronLink()}
@@ -81,14 +68,6 @@ export function WalletConnectCard() {
             : busy === "connecting"
               ? "Connecting…"
               : "Connect TronLink"}
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleSimulated()}
-          disabled={busy !== "idle" || connected}
-          className="w-full rounded-xl border border-glass-border bg-glass-bg px-4 py-2.5 text-sm text-content-primary transition hover:border-white/20 hover:bg-glass-highlight disabled:opacity-50"
-        >
-          Continue with simulated wallet (local demo)
         </button>
       </div>
 

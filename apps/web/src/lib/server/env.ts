@@ -33,15 +33,6 @@ export const serverEnv = {
   get tronRpcUrl() {
     return process.env.TRON_RPC_URL ?? "https://nile.trongrid.io";
   },
-  get alkahestMode() {
-    return (process.env.ARKHAI_MODE ?? process.env.ALKAHEST_MODE ?? "").toLowerCase();
-  },
-  get alkahestRpcUrl() {
-    return e("ALKAHEST_RPC_URL");
-  },
-  get alkahestPrivateKey() {
-    return e("ALKAHEST_PRIVATE_KEY") as `0x${string}` | undefined;
-  },
   get filecoinAuditMode() {
     return (process.env.FILECOIN_AUDIT_MODE ?? "").toLowerCase();
   },
@@ -83,11 +74,6 @@ export function solanaX402MockReason(): string {
 
 export function isMockTronRepay() {
   return serverEnv.tronRepaymentMode === "mock";
-}
-
-export function isMockAlkahest() {
-  if (serverEnv.alkahestMode === "mock") return true;
-  return !serverEnv.alkahestPrivateKey || !serverEnv.alkahestRpcUrl;
 }
 
 export function isMockFilecoinAudit() {

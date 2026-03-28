@@ -1,5 +1,6 @@
 /**
- * ProofOfTrust audit blobs on Filecoin Onchain Cloud (warm storage) via Synapse SDK.
+ * Primary off-DB audit trail for paid x402 runs: JSON blobs on Filecoin Onchain Cloud (Synapse warm storage).
+ * PurchaseRequest.auditPieceCid stores the returned PieceCID.
  *
  * @see https://docs.filecoin.cloud/getting-started/
  * @see https://filecoin.cloud/
@@ -144,5 +145,37 @@ export async function uploadPurchaseAuditToFilecoin(payload: FilecoinAuditPayloa
       console.error("[synapse] uploadPurchaseAuditToFilecoin failed", err);
     }
     return undefined;
+  }
+}
+
+/**
+ * Downloads audit JSON previously uploaded via {@link uploadPurchaseAuditToFilecoin}.
+ * Returns parsed object or null if unavailable / misconfigured / download error.
+ */
+export async function downloadPurchaseAuditFromFilecoin(
+  pieceCid: string
+): Promise<Record<string, unknown> | null> {
+  if (isMockFilecoinAudit()) return null;
+
+  const pk = serverEnv.synapsePrivateKey;
+  const rpc = serverEnv.filecoinCalibrationRpcUrl;
+  const cid = pieceCid.trim();
+  if (!pk || !rpc || !cid) return null;
+
+  try {
+    const account = privateKeyToAccount(pk);
+    const synapse = Synapse.create({
+      account,
+      chain: calibration,
+      transport: http(rpc),
+      source: SYNAPSE_SOURCE,
+      withCDN: false
+    });
+    const bytes = await synapse.storage.download({ pieceCid: cid, withCDN: false });
+    const text = new TextDecoder().decode(bytes);
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch (err) {
+    console.warn("[synapse] downloadPurchaseAuditFromFilecoin failed", { pieceCid: cid, err });
+    return null;
   }
 }

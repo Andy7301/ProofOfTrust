@@ -14,6 +14,12 @@ import {
   getPaymentForRequest,
   useMockStore
 } from "@/lib/mock-store";
+import { filecoinPieceDocsUrl } from "@/lib/explorer-links";
+import {
+  requestAmountDisplay,
+  requestDescription,
+  requestTargetLine
+} from "@/lib/request-display";
 import { describeX402Payment } from "@/lib/x402-payment-hints";
 
 export default function RequestDetailPage() {
@@ -112,8 +118,17 @@ export default function RequestDetailPage() {
           <h1 className="text-2xl font-semibold text-content-primary">Request detail</h1>
           <StatusBadge status={request.status} />
         </div>
-        <p className="mt-2 text-sm text-content-muted">{request.description}</p>
-        <p className="font-mono text-xs text-content-faint">{request.targetService}</p>
+        <p className="mt-2 text-sm text-content-muted">{requestDescription(request)}</p>
+        <p className="font-mono text-xs text-content-faint">{requestTargetLine(request)}</p>
+        {request.filecoinAudit ? (
+          <p className="mt-2 text-xs text-emerald-200/85">
+            Showing amounts and copy from{" "}
+            <a href={filecoinPieceDocsUrl()} className="underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+              Filecoin
+            </a>{" "}
+            audit · ${requestAmountDisplay(request)} billed
+          </p>
+        ) : null}
       </div>
 
       <Timeline events={timeline} />
@@ -130,6 +145,22 @@ export default function RequestDetailPage() {
           }
         />
       </div>
+
+      {request.auditPieceCid ? (
+        <JsonPanel
+          title={
+            request.filecoinAudit
+              ? "Filecoin audit (Synapse piece)"
+              : "Filecoin piece CID (audit not loaded)"
+          }
+          payload={
+            request.filecoinAudit ?? {
+              pieceCid: request.auditPieceCid,
+              hint: "Configure Synapse + RPC in .env so the API can download this audit JSON."
+            }
+          }
+        />
+      ) : null}
 
       {payment ? (
         <div className="space-y-2">

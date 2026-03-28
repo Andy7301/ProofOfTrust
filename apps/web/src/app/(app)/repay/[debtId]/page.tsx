@@ -10,7 +10,7 @@ import { useMockStore } from "@/lib/mock-store";
 export default function RepayPage() {
   const params = useParams();
   const debtId = typeof params.debtId === "string" ? params.debtId : "";
-  const { state, repayDebt } = useMockStore();
+  const { state, repayDebtFromWallet, repayDebt } = useMockStore();
   const debt = state.debts.find((d) => d.id === debtId);
   const [txHash, setTxHash] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -47,11 +47,23 @@ export default function RepayPage() {
     );
   }
 
-  const submit = async (e: React.FormEvent) => {
+  const payWithWallet = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      await repayDebtFromWallet(debtId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitManual = async (e: React.FormEvent) => {
     e.preventDefault();
     const hash = txHash.trim();
     if (!hash) {
-      setError("Paste your TRON transaction ID from TronScan (matches NEXT_PUBLIC_TRON_NETWORK).");
+      setError("Enter a transaction id or use Pay with TronLink.");
       return;
     }
     setError(null);
@@ -73,15 +85,15 @@ export default function RepayPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-content-primary">Repay on TRON</h1>
         <p className="mt-2 text-sm text-content-muted">
-          Send the repayment on-chain, then paste the transaction ID here. The server verifies it
-          against <code className="text-content-faint">TRON_RPC_URL</code> unless{" "}
-          <code className="text-content-faint">TRON_REPAYMENT_MODE=mock</code>.
+          Primary flow: TronLink opens a native <span className="text-tron">TRX</span> transfer to the
+          treasury configured on the server. Amount follows{" "}
+          <code className="text-content-faint">TRON_SUN_PER_DEBT_DOLLAR</code> × debt (USD).
         </p>
       </div>
 
       <div className="glass space-y-3 rounded-2xl p-5 text-sm text-content-muted">
         <p>
-          <span className="text-content-faint">Amount due:</span>{" "}
+          <span className="text-content-faint">Amount due (app USD):</span>{" "}
           <span className="font-semibold text-content-primary">${debt.amount}</span>
         </p>
         <p>
@@ -92,7 +104,7 @@ export default function RepayPage() {
             rel="noopener noreferrer"
             className="text-tron underline decoration-tron/40 hover:decoration-tron"
           >
-            Open TronScan for this network
+            TronScan (this network)
           </a>
         </p>
       </div>
@@ -103,25 +115,33 @@ export default function RepayPage() {
         </p>
       ) : null}
 
-      <form onSubmit={(e) => void submit(e)} className="glass space-y-4 rounded-2xl p-5">
-        <label className="block space-y-1">
-          <span className="text-xs text-content-muted">Transaction ID / hash</span>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => void payWithWallet()}
+        className="w-full rounded-xl bg-tron py-3 text-sm font-semibold text-cosmic hover:brightness-110 disabled:opacity-50"
+      >
+        {busy ? "Working…" : "Pay with TronLink (TRX)"}
+      </button>
+
+      <details className="glass rounded-2xl p-4 text-sm text-content-muted">
+        <summary className="cursor-pointer text-content-primary">Advanced: paste tx id</summary>
+        <form onSubmit={(e) => void submitManual(e)} className="mt-4 space-y-3">
           <input
             value={txHash}
             onChange={(e) => setTxHash(e.target.value)}
             className="w-full rounded-xl border border-glass-border bg-black/30 px-3 py-2 font-mono text-sm text-content-primary outline-none focus:border-tron/50"
-            placeholder="From TronScan after successful transfer"
-            required
+            placeholder="Transaction ID after you broadcast elsewhere"
           />
-        </label>
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-xl bg-tron py-2.5 text-sm font-semibold text-cosmic hover:brightness-110 disabled:opacity-50"
-        >
-          {busy ? "Verifying…" : "Confirm repayment"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-xl border border-glass-border py-2 text-xs font-medium text-content-primary hover:bg-glass-highlight disabled:opacity-50"
+          >
+            Verify pasted transaction
+          </button>
+        </form>
+      </details>
     </div>
   );
 }

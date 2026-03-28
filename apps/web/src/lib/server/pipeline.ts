@@ -82,6 +82,15 @@ export async function runPurchasePipeline(requestId: string): Promise<void> {
   const alkahestRef = await optionalAlkahestRef();
   const auditPieceCid = await optionalAuditPieceCid({ requestId });
 
+  const resultPayload =
+    paid.ok || !paid.error
+      ? paid.bodyText.slice(0, 16_000)
+      : JSON.stringify({
+          solanaError: paid.error,
+          status: paid.status,
+          snippet: paid.bodyText.slice(0, 2000)
+        }).slice(0, 16_000);
+
   const payment: FrontedPayment = {
     id: genId("pay"),
     requestId,
@@ -89,7 +98,7 @@ export async function runPurchasePipeline(requestId: string): Promise<void> {
     amount: req3.requestedAmount,
     x402Status: paid.x402Status === "PAID" ? "PAID" : "FAILED",
     txHash: paid.transactionSignature,
-    resultPayload: paid.bodyText.slice(0, 16_000),
+    resultPayload,
     createdAt: nowIso()
   };
 

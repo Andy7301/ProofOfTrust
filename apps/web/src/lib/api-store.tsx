@@ -50,6 +50,8 @@ type ApiContextValue = {
     urgency: PurchaseRequest["urgency"];
   }) => Promise<string>;
   repayDebt: (debtId: string, txHash: string) => Promise<void>;
+  /** Fetch quote + TronLink TRX transfer + confirm with API. */
+  repayDebtFromWallet: (debtId: string) => Promise<void>;
 };
 
 const ApiContext = createContext<ApiContextValue | null>(null);
@@ -194,6 +196,45 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
     [sync]
   );
 
+  const repayDebtFromWallet = useCallback(
+    async (debtId: string) => {
+      const tron = localStorage.getItem("proof_wallet");
+      if (!tron) throw new Error("Not connected");
+      if (localStorage.getItem("proof_sim") === "1") {
+        await repayDebt(debtId, `sim_repay_${Date.now()}`);
+        return;
+      }
+      const q = await fetch(`/api/debts/${encodeURIComponent(debtId)}/repay-quote`, {
+        headers: { "X-Tron-Address": tron },
+        cache: "no-store"
+      });
+      const quote = (await q.json().catch(() => ({}))) as {
+        error?: string;
+        toAddress?: string;
+        amountSun?: number;
+        mock?: boolean;
+      };
+      if (!q.ok) {
+        throw new Error(quote.error || "Repay quote failed");
+      }
+      if (quote.mock) {
+        await repayDebt(debtId, `mock_repay_${Date.now()}`);
+        return;
+      }
+      if (!quote.toAddress || quote.amountSun == null) {
+        throw new Error("Invalid repay quote from server.");
+      }
+      const { broadcastTronTrxRepayment } = await import("@/lib/tron-repay-wallet");
+      const txid = await broadcastTronTrxRepayment({
+        from: tron,
+        to: quote.toAddress,
+        amountSun: quote.amountSun
+      });
+      await repayDebt(debtId, txid);
+    },
+    [repayDebt]
+  );
+
   const value = useMemo<ApiContextValue>(
     () => ({
       state,
@@ -201,9 +242,10 @@ export function ApiStoreProvider({ children }: { children: ReactNode }) {
       connect,
       disconnect,
       createRequest,
-      repayDebt
+      repayDebt,
+      repayDebtFromWallet
     }),
-    [state, ready, connect, disconnect, createRequest, repayDebt]
+    [state, ready, connect, disconnect, createRequest, repayDebt, repayDebtFromWallet]
   );
 
   return <ApiContext.Provider value={value}>{children}</ApiContext.Provider>;

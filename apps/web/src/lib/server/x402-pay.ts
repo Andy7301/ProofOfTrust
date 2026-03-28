@@ -1,17 +1,36 @@
 import { wrap, WrappedFetchError } from "@faremeter/fetch";
 import { createPaymentHandler } from "@faremeter/payment-solana/exact";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
+  getMint,
+  TOKEN_PROGRAM_ID
+} from "@solana/spl-token";
 import { Connection, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { isMockSolanaX402, serverEnv } from "./env";
 import { loadSolanaAgentKeypair } from "./solana-agent";
+import { getSolanaUsdcMintBase58, getSolanaX402Network } from "./solana-x402-config";
 
-const DEVNET_USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+/** Must match demo route `accepts[].amount` (USDC smallest units, 6 decimals). */
+function requiredUsdcMicros(): bigint {
+  const raw = process.env.SOLANA_X402_PAYMENT_MICRO_USDC?.trim();
+  const n = raw ? BigInt(raw) : 1000n;
+  return n > 0n ? n : 1000n;
+}
+
+function resolveAbsoluteTargetUrl(targetUrl: string): string {
+  const u = targetUrl.trim();
+  if (/^https?:\/\//i.test(u)) return u;
+  const base = (serverEnv.nextPublicBaseUrl || "http://localhost:3000").replace(/\/$/, "");
+  const path = u.startsWith("/") ? u : `/${u}`;
+  return `${base}${path}`;
+}
 
 export type PaidFetchResult = {
   ok: boolean;
   status: number;
   bodyText: string;
   x402Status: "PAID" | "FAILED";
-  /** Solana signature when settlement-account x402 path submitted a tx (see demo `extra.features`). */
   transactionSignature?: string;
   error?: string;
 };
@@ -25,7 +44,8 @@ export async function executePaidFetch(targetUrl: string): Promise<PaidFetchResu
       ok: true,
       status: 200,
       bodyText: JSON.stringify({
-        summary: "Mock x402: no on-chain payment (set SOLANA_AGENT_PRIVATE_KEY and not SOLANA_X402_MODE=mock for real).",
+        summary:
+          "Mock x402: no on-chain payment (set SOLANA_AGENT_PRIVATE_KEY and not SOLANA_X402_MODE=mock for real).",
         target: targetUrl
       }),
       x402Status: "PAID"
@@ -43,11 +63,68 @@ export async function executePaidFetch(targetUrl: string): Promise<PaidFetchResu
     };
   }
 
-  let lastSubmittedSignature: string | undefined;
+  const url = resolveAbsoluteTargetUrl(targetUrl);
+  const mintPk = new PublicKey(getSolanaUsdcMintBase58());
+  const networkId = getSolanaX402Network();
+  const needMicros = requiredUsdcMicros();
 
   const connection = new Connection(serverEnv.solanaRpcUrl, "confirmed");
+
+  try {
+    const lamports = await connection.getBalance(kp.publicKey);
+    if (lamports < 2_000_000) {
+      return {
+        ok: false,
+        status: 0,
+        bodyText: "",
+        x402Status: "FAILED",
+        error: `Agent SOL balance too low (${lamports} lamports). Fund ${kp.publicKey.toBase58()} on this cluster for fees.`
+      };
+    }
+
+    const ata = getAssociatedTokenAddressSync(
+      mintPk,
+      kp.publicKey,
+      false,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+    const bal = await connection.getTokenAccountBalance(ata).catch(() => null);
+    if (!bal) {
+      return {
+        ok: false,
+        status: 0,
+        bodyText: "",
+        x402Status: "FAILED",
+        error: `No USDC token account for agent. Create/fund ATA ${ata.toBase58()} (mint ${mintPk.toBase58()}).`
+      };
+    }
+    if (BigInt(bal.value.amount) < needMicros) {
+      return {
+        ok: false,
+        status: 0,
+        bodyText: "",
+        x402Status: "FAILED",
+        error: `Agent USDC balance too low: ${bal.value.uiAmountString} at ${ata.toBase58()} (need ≥ ${needMicros} micro-units).`
+      };
+    }
+
+    await getMint(connection, mintPk);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return {
+      ok: false,
+      status: 0,
+      bodyText: "",
+      x402Status: "FAILED",
+      error: `Solana preflight failed: ${msg}`
+    };
+  }
+
+  let lastSubmittedSignature: string | undefined;
+
   const wallet = {
-    network: "solana-devnet" as const,
+    network: networkId,
     publicKey: kp.publicKey,
     partiallySignTransaction: async (tx: VersionedTransaction) => {
       tx.sign([kp]);
@@ -68,7 +145,7 @@ export async function executePaidFetch(targetUrl: string): Promise<PaidFetchResu
     }
   };
 
-  const handler = createPaymentHandler(wallet, DEVNET_USDC_MINT, connection, {
+  const handler = createPaymentHandler(wallet, mintPk, connection, {
     features: { enableSettlementAccounts: true }
   });
 
@@ -79,7 +156,7 @@ export async function executePaidFetch(targetUrl: string): Promise<PaidFetchResu
   });
 
   try {
-    const res = await paidFetch(targetUrl);
+    const res = await paidFetch(url);
     const bodyText = await res.text();
     return {
       ok: res.ok,

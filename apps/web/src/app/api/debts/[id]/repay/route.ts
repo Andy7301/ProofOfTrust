@@ -4,6 +4,8 @@ import { z } from "zod";
 import { loadDb, mutateDb } from "@/lib/server/db";
 import { getTronAddress } from "@/lib/server/auth";
 import { verifyTronRepaymentTx } from "@/lib/server/tron";
+import { debtUsdToRepaySun, getTronRepayTreasuryBase58 } from "@/lib/server/tron-repay-config";
+import { isMockTronRepay } from "@/lib/server/env";
 import { eventRepaid, applyRepayment } from "@/lib/server/reputation";
 import { nowIso } from "@/lib/server/ids";
 
@@ -45,9 +47,29 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     return NextResponse.json({ error: "Debt is not open" }, { status: 400 });
   }
 
-  const okChain = await verifyTronRepaymentTx(parsed.data.txHash);
+  const treasury = getTronRepayTreasuryBase58();
+  if (!isMockTronRepay() && !treasury) {
+    return NextResponse.json(
+      { error: "Server missing TRON_REPAY_RECEIVER — cannot verify repayments." },
+      { status: 503 }
+    );
+  }
+
+  const minSun = debtUsdToRepaySun(debt0.amount);
+  const okChain = await verifyTronRepaymentTx(
+    parsed.data.txHash,
+    isMockTronRepay() || !treasury
+      ? undefined
+      : { payerBase58: tron, treasuryBase58: treasury, minSun }
+  );
   if (!okChain) {
-    return NextResponse.json({ error: "Could not verify TRON transaction" }, { status: 400 });
+    return NextResponse.json(
+      {
+        error:
+          "Could not verify TRON transaction (wrong sender/recipient, amount, or not confirmed)."
+      },
+      { status: 400 }
+    );
   }
 
   await mutateDb((db) => {

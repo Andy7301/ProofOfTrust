@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getSolanaAgentPublicKeyBase58 } from "@/lib/server/solana-agent";
+import { getSolanaUsdcMintBase58, getSolanaX402Network } from "@/lib/server/solana-x402-config";
 
 export const runtime = "nodejs";
 
@@ -11,9 +12,6 @@ export const runtime = "nodejs";
  */
 const PAYMENT_SIGNATURE = "PAYMENT-SIGNATURE";
 const PAYMENT_REQUIRED = "PAYMENT-REQUIRED";
-
-/** Devnet USDC mint (SPL) — Faremeter `exact` scheme uses token address as `asset`. */
-const DEVNET_USDC_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 
 type PaymentRequiredV2 = {
   x402Version: 2;
@@ -46,12 +44,14 @@ function buildPaymentRequired(req: NextRequest): PaymentRequiredV2 {
   const resourceUrl = `${u.protocol}//${u.host}${u.pathname}`;
 
   const feePayer = getSolanaAgentPublicKeyBase58();
+  const micro =
+    process.env.SOLANA_X402_PAYMENT_MICRO_USDC?.trim() || "1000";
   const accept: PaymentRequiredV2["accepts"][0] = {
     scheme: "exact",
-    network: "solana-devnet",
-    /** Smallest units (USDC has 6 decimals) — 0.001 USDC for cheap demos */
-    amount: "1000",
-    asset: DEVNET_USDC_MINT,
+    network: getSolanaX402Network(),
+    /** Smallest units (USDC has 6 decimals) — default 0.001 USDC */
+    amount: micro,
+    asset: getSolanaUsdcMintBase58(),
     payTo: getDemoPayTo(),
     maxTimeoutSeconds: 120
   };

@@ -204,6 +204,7 @@ type MockContextValue = {
     urgency: PurchaseRequest["urgency"];
   }) => Promise<string>;
   repayDebt: (debtId: string, txHash: string) => Promise<void>;
+  repayDebtFromWallet: (debtId: string) => Promise<void>;
 };
 
 const MockContext = createContext<MockContextValue | null>(null);
@@ -409,6 +410,13 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
     });
   }, [state.debts, state.user?.id]);
 
+  const repayDebtFromWallet = useCallback(
+    async (debtId: string) => {
+      await repayDebt(debtId, `mock_tronlink_${Date.now()}`);
+    },
+    [repayDebt]
+  );
+
   const value = useMemo<MockContextValue>(
     () => ({
       state,
@@ -416,9 +424,10 @@ export function MockStoreProvider({ children }: { children: ReactNode }) {
       connect,
       disconnect,
       createRequest,
-      repayDebt
+      repayDebt,
+      repayDebtFromWallet
     }),
-    [state, ready, connect, disconnect, createRequest, repayDebt]
+    [state, ready, connect, disconnect, createRequest, repayDebt, repayDebtFromWallet]
   );
 
   return <MockContext.Provider value={value}>{children}</MockContext.Provider>;

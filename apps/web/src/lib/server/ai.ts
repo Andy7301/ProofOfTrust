@@ -36,10 +36,19 @@ merchantOrService (string), claimedAmount (number), category (string), confidenc
 Description: ${JSON.stringify(input.description)}
 Requested amount (USD-ish): ${input.requestedAmount}`;
 
-  const res = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: prompt
-  });
+  const GEMINI_TIMEOUT_MS = 55_000;
+  const res = await Promise.race([
+    ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt
+    }),
+    new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error(`Gemini timed out after ${GEMINI_TIMEOUT_MS}ms`)),
+        GEMINI_TIMEOUT_MS
+      );
+    })
+  ]);
   const text = res.text?.trim() ?? "";
   try {
     const jsonStart = text.indexOf("{");

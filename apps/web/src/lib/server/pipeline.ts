@@ -1,4 +1,5 @@
 import type {
+  AiExtractedData,
   ApprovalDecision,
   DebtRecord,
   FrontedPayment,
@@ -21,7 +22,35 @@ function patchRequest(db: { requests: PurchaseRequest[] }, id: string, patch: Pa
   db.requests[i] = { ...prev, ...patch, updatedAt: nowIso() };
 }
 
+function pipelineErrorAi(message: string): AiExtractedData {
+  return {
+    merchantOrService: "—",
+    claimedAmount: 0,
+    category: "pipeline-error",
+    confidence: 0,
+    suspiciousFlags: ["pipeline_error"],
+    extractedJustification: message
+  };
+}
+
 export async function runPurchasePipeline(requestId: string): Promise<void> {
+  try {
+    await runPurchasePipelineSteps(requestId);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[runPurchasePipeline]", requestId, err);
+    await mutateDb((db) => {
+      patchRequest(db, requestId, {
+        status: "FAILED",
+        aiExtractedData: pipelineErrorAi(message),
+        aiConfidence: 0,
+        suspicionFlags: ["pipeline_error"]
+      });
+    });
+  }
+}
+
+async function runPurchasePipelineSteps(requestId: string): Promise<void> {
   const db0 = await loadDb();
   const request0 = db0.requests.find((r) => r.id === requestId);
   const user0 = request0 ? db0.users.find((u) => u.id === request0.userId) : undefined;

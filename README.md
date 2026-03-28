@@ -22,4 +22,4 @@ pnpm dev
 
 ## Environment
 
-Copy `.env.example` to `.env.local` in `apps/web` or root (depending on final env loading strategy) and fill required values.
+Copy `.env.example` to `.env` or `.env.local` at the **repository root**. Next.js is configured (`apps/web/next.config.ts` `envDir`) to load those files so server secrets like `SOLANA_AGENT_PRIVATE_KEY` apply to `apps/web`. Restart `pnpm dev` after changes.

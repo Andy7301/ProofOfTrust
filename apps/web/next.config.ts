@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 /**
  * Keep Faremeter + arktype + Solana kit out of the server bundle graph.
@@ -27,7 +28,9 @@ const serverExternalPackages = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  serverExternalPackages
+  serverExternalPackages,
+  /** Monorepo: load `.env*` from repo root (same as `.env.example`), not only `apps/web`. */
+  envDir: path.join(__dirname, "..")
 };
 
 export default nextConfig;

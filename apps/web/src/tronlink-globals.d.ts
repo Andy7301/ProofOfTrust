@@ -3,6 +3,8 @@ export {};
 declare global {
   interface Window {
     tronLink?: {
+      ready?: boolean;
+      tronWeb?: Window["tronWeb"];
       request: (args: { method: string }) => Promise<unknown>;
     };
     tronWeb?: {

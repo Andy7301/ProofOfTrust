@@ -6,6 +6,8 @@ import { useMemo } from "react";
 import { JsonPanel } from "@/components/ui/json-panel";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Timeline } from "@/components/ui/timeline";
+import { TxExplorerLink } from "@/components/tx-explorer-link";
+import { solanaTxExplorerUrl } from "@/lib/explorer-links";
 import {
   getApprovalForRequest,
   getDebtForRequest,
@@ -60,9 +62,11 @@ export default function RequestDetailPage() {
         },
         {
           title: "Solana x402",
-          subtitle: payment
-            ? `Paid · ${payment.txHash?.slice(0, 16)}…`
-            : "Not started or skipped",
+          subtitle: payment?.txHash
+            ? `Paid · ${payment.txHash.slice(0, 12)}…`
+            : payment
+              ? "Paid (no on-chain signature recorded)"
+              : "Not started or skipped",
           meta: payment ? "done" : "—",
           state:
             request.status === "X402_PENDING"
@@ -109,7 +113,7 @@ export default function RequestDetailPage() {
       <Timeline events={timeline} />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <JsonPanel title="AI extracted (simulated)" payload={request.aiExtractedData ?? {}} />
+        <JsonPanel title="AI extracted" payload={request.aiExtractedData ?? {}} />
         <JsonPanel
           title="Approval decision"
           payload={
@@ -122,7 +126,19 @@ export default function RequestDetailPage() {
       </div>
 
       {payment ? (
-        <JsonPanel title="x402 payment (simulated)" payload={payment} />
+        <div className="space-y-2">
+          {payment.txHash ? (
+            <p className="text-sm text-content-muted">
+              On-chain (Solana):{" "}
+              <TxExplorerLink
+                label={payment.txHash}
+                url={solanaTxExplorerUrl(payment.txHash)}
+                mono
+              />
+            </p>
+          ) : null}
+          <JsonPanel title="x402 payment" payload={payment} />
+        </div>
       ) : (
         <p className="text-sm text-content-muted">No x402 payment object yet (rejected or pending).</p>
       )}

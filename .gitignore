@@ -8,3 +8,4 @@ coverage
 .env.local
 pnpm-lock.yaml
 package-lock.json
+apps/web/data/

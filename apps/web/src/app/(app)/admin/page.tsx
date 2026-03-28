@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { JsonPanel } from "@/components/ui/json-panel";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { TxExplorerLink } from "@/components/tx-explorer-link";
+import { solanaTxExplorerUrl } from "@/lib/explorer-links";
 import {
   getApprovalForRequest,
   getDebtForRequest,
@@ -18,7 +20,7 @@ export default function AdminPage() {
       <div>
         <h1 className="text-2xl font-semibold text-content-primary">Admin / demo timeline</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Judge view: all simulated requests, decisions, payments, and debts.
+          Judge view: requests, decisions, payments, and debts (API or mock client).
         </p>
       </div>
 
@@ -49,8 +51,16 @@ export default function AdminPage() {
                     <StatusBadge status={r.status} />
                   </td>
                   <td className="px-4 py-3 text-content-muted">{a?.decision ?? "—"}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-content-muted">
-                    {p?.txHash?.slice(0, 12) ?? "—"}…
+                  <td className="px-4 py-3 text-xs text-content-muted">
+                    {p?.txHash ? (
+                      <TxExplorerLink
+                        label={`${p.txHash.slice(0, 10)}…`}
+                        url={solanaTxExplorerUrl(p.txHash)}
+                        mono
+                      />
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-4 py-3 text-content-muted">
                     {d ? `${d.status} $${d.amount}` : "—"}
@@ -67,7 +77,7 @@ export default function AdminPage() {
         </table>
       </section>
 
-      <JsonPanel title="Full mock state snapshot" payload={state} />
+      <JsonPanel title="Full client state snapshot" payload={state} />
     </div>
   );
 }

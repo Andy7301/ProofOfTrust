@@ -46,6 +46,10 @@ export interface PurchaseRequest {
   aiConfidence?: number;
   suspicionFlags: string[];
   status: RequestStatus;
+  /** Optional Alkahest / EVM escrow attestation id or tx note */
+  alkahestRef?: string;
+  /** Optional Filecoin PieceCID after audit upload */
+  auditPieceCid?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -16,8 +16,8 @@ export function LandingView() {
           AI-native cross-chain expense concierge
         </h1>
         <p className="mt-3 text-content-muted">
-          Access paid <span className="font-medium text-solana">Solana x402</span> services now,
-          settle on <span className="font-medium text-tron">TRON</span> when you&apos;re ready.
+          Access paid services on <span className="font-medium text-solana">Solana</span>, then settle on{" "}
+          <span className="font-medium text-tron">TRON</span> when you&apos;re ready.
         </p>
         {connected ? (
           <Link

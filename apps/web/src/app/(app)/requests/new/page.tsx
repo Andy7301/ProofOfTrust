@@ -51,8 +51,7 @@ export default function NewRequestPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-content-primary">New purchase request</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Simulated AI + policy run after submit. Include <span className="text-amber-200">review</span>{" "}
-          for manual review, or <span className="text-rose-200">reject</span> to force denial.
+          After you submit, we review the request and proceed to payment when approved.
         </p>
       </div>
 
@@ -106,7 +105,7 @@ export default function NewRequestPage() {
           disabled={submitting}
           className="w-full rounded-xl bg-tron px-4 py-2.5 text-sm font-semibold text-cosmic transition hover:brightness-110 disabled:opacity-50"
         >
-          {submitting ? "Submitting…" : "Submit & run verification"}
+          {submitting ? "Submitting…" : "Submit request"}
         </button>
       </form>
     </div>

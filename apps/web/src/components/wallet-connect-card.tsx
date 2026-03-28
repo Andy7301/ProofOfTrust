@@ -37,23 +37,14 @@ export function WalletConnectCard() {
         aria-hidden
       />
 
-      <p className="text-xs font-medium tracking-wide text-content-muted">Step 1 of 5</p>
-      <h2 className="mt-2 text-2xl font-semibold text-content-primary">Connect your TRON wallet</h2>
+      <h2 className="text-2xl font-semibold text-content-primary">Connect your wallet</h2>
       <p className="mt-2 text-sm text-content-muted">
-        TronLink provides your TRON address for trust scoring, debt tracking, and repayment
-        verification. Solana x402 payments still run from the server agent key in{" "}
-        <code className="text-content-faint">.env</code>.
+        Use TronLink to sign in. Your address is used for your trust profile, activity, and TRX repayments.
       </p>
 
       <div className="mt-6 flex flex-col items-center gap-2">
-        <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-content-faint">
-          Cross-chain flow
-        </p>
         <BridgeRail />
-        <div className="flex w-full max-w-md justify-between text-[11px] text-content-faint">
-          <span className="text-tron">TRON · repay</span>
-          <span className="text-solana">Solana · x402</span>
-        </div>
+        <p className="text-center text-[11px] text-content-faint">Repay on TRON · pay vendors via Solana</p>
       </div>
 
       <div className="mt-6">
@@ -67,7 +58,7 @@ export function WalletConnectCard() {
             ? "Connected"
             : busy === "connecting"
               ? "Connecting…"
-              : "Connect TronLink"}
+              : "Connect with TronLink"}
         </button>
       </div>
 
@@ -77,10 +68,10 @@ export function WalletConnectCard() {
         </p>
       ) : null}
 
-      <div className="mt-5 rounded-xl border border-glass-border bg-black/30 p-3 font-mono text-xs text-content-muted backdrop-blur-sm">
-        <span className="text-content-faint">Status</span>{" "}
-        <span className="text-content-primary">
-          {connected ? `connected · ${state.user!.tronAddress.slice(0, 6)}…` : "not connected"}
+      <div className="mt-5 rounded-xl border border-glass-border bg-black/30 p-3 text-xs text-content-muted backdrop-blur-sm">
+        <span className="text-content-faint">Signed in as</span>{" "}
+        <span className="font-mono text-content-primary">
+          {connected ? `${state.user!.tronAddress.slice(0, 8)}…${state.user!.tronAddress.slice(-6)}` : "—"}
         </span>
       </div>
     </section>

@@ -85,9 +85,8 @@ export default function RepayPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-content-primary">Repay on TRON</h1>
         <p className="mt-2 text-sm text-content-muted">
-          Primary flow: TronLink opens a native <span className="text-tron">TRX</span> transfer to the
-          treasury configured on the server. Amount follows{" "}
-          <code className="text-content-faint">TRON_SUN_PER_DEBT_DOLLAR</code> × debt (USD).
+          Approve a <span className="text-tron">TRX</span> transfer in TronLink to settle this balance. The extension
+          will show the exact amount before you confirm.
         </p>
       </div>
 

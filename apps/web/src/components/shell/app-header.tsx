@@ -7,8 +7,7 @@ import { clsx } from "clsx";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/requests/new", label: "New request" },
-  { href: "/admin", label: "Admin" }
+  { href: "/requests/new", label: "New request" }
 ];
 
 export function AppHeader() {

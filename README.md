@@ -22,6 +22,6 @@ pnpm dev
 
 ## Environment
 
-Copy `.env.example` to `.env` or `.env.local` at the **repository root**. `apps/web/load-root-env.ts` loads them from `next.config.ts` and again from `src/instrumentation.ts` so values survive Next’s own `apps/web` `.env` pass (which can overwrite with empty keys). Restart `pnpm dev` after changes.
+Use **`apps/web/.env.local`** (standard Next) or a **repository root** `.env` / `.env.local`. Root files are merged in **`next.config.ts`** via `load-root-env.ts` (Node only — do not import that module from `instrumentation` or client code). Restart `pnpm dev` after changes.
 
-If Solana or API secrets still look missing: ensure **`apps/web/.env*`** does not define the same variable with an empty value, and **`NEXT_PUBLIC_USE_MOCK_CLIENT`** is not `1` unless you intend the browser mock store.
+If secrets look missing: ensure **`apps/web/.env*`** does not define the same variable with an empty value (that overrides root), and **`NEXT_PUBLIC_USE_MOCK_CLIENT`** is not `1` unless you intend the browser mock store.

@@ -5,6 +5,8 @@ import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useMockStore } from "@/lib/mock-store";
 
+const useMockClientUi = process.env.NEXT_PUBLIC_USE_MOCK_CLIENT === "1";
+
 export default function DashboardPage() {
   const { state } = useMockStore();
   const user = state.user!;
@@ -14,7 +16,9 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold text-content-primary">Dashboard</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Trust, credit, and active obligations — simulated for demo.
+          {useMockClientUi
+            ? "In-browser mock mode — requests and Solana payments are faked locally (set NEXT_PUBLIC_USE_MOCK_CLIENT off to use the API + real x402)."
+            : "Trust, credit, and obligations from the API. Solana x402 spends USDC on-chain whenever SOLANA_AGENT_PRIVATE_KEY is set (unless SOLANA_X402_DISABLE=1)."}
         </p>
       </div>
 

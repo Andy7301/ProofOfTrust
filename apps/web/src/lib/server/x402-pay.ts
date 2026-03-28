@@ -7,7 +7,7 @@ import {
   TOKEN_PROGRAM_ID
 } from "@solana/spl-token";
 import { Connection, PublicKey, VersionedTransaction } from "@solana/web3.js";
-import { isMockSolanaX402, serverEnv } from "./env";
+import { isMockSolanaX402, serverEnv, solanaX402MockReason } from "./env";
 import { loadSolanaAgentKeypair } from "./solana-agent";
 import { getSolanaUsdcMintBase58, getSolanaX402Network } from "./solana-x402-config";
 
@@ -44,8 +44,10 @@ export async function executePaidFetch(targetUrl: string): Promise<PaidFetchResu
       ok: true,
       status: 200,
       bodyText: JSON.stringify({
+        mode: "mock",
+        reason: solanaX402MockReason(),
         summary:
-          "Mock x402: no on-chain payment (set SOLANA_AGENT_PRIVATE_KEY and not SOLANA_X402_MODE=mock for real).",
+          "No on-chain USDC was spent — add SOLANA_AGENT_PRIVATE_KEY (and ensure SOLANA_X402_DISABLE is not 1).",
         target: targetUrl
       }),
       x402Status: "PAID"

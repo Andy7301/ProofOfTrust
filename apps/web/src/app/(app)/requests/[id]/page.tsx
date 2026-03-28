@@ -14,6 +14,7 @@ import {
   getPaymentForRequest,
   useMockStore
 } from "@/lib/mock-store";
+import { describeX402Payment } from "@/lib/x402-payment-hints";
 
 export default function RequestDetailPage() {
   const params = useParams();
@@ -32,6 +33,11 @@ export default function RequestDetailPage() {
   const debt = useMemo(
     () => (request ? getDebtForRequest(state.debts, request.id) : undefined),
     [state.debts, request]
+  );
+
+  const x402Hint = useMemo(
+    () => (payment ? describeX402Payment(payment) : null),
+    [payment]
   );
 
   const timeline = useMemo(() => {
@@ -127,8 +133,13 @@ export default function RequestDetailPage() {
 
       {payment ? (
         <div className="space-y-2">
-          {payment.txHash ? (
-            <p className="text-sm text-content-muted">
+          {x402Hint?.isMock ? (
+            <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-sm">
+              <p className="font-medium text-amber-100">No real Solana payment for this record</p>
+              <p className="mt-1 text-amber-100/85">{x402Hint.why}</p>
+            </div>
+          ) : payment.txHash ? (
+            <p className="text-sm text-emerald-200/90">
               On-chain (Solana):{" "}
               <TxExplorerLink
                 label={payment.txHash}
@@ -137,7 +148,7 @@ export default function RequestDetailPage() {
               />
             </p>
           ) : null}
-          <JsonPanel title="x402 payment" payload={payment} />
+          <JsonPanel title="x402 payment (raw)" payload={payment} />
         </div>
       ) : (
         <p className="text-sm text-content-muted">No x402 payment object yet (rejected or pending).</p>

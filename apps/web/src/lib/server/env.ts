@@ -4,8 +4,8 @@ export const serverEnv = {
   geminiApiKey: process.env.GEMINI_API_KEY?.trim(),
   solanaRpcUrl: process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com",
   solanaAgentPrivateKey: process.env.SOLANA_AGENT_PRIVATE_KEY?.trim(),
-  /** Set to `mock` to skip on-chain x402. Otherwise real when SOLANA_AGENT_PRIVATE_KEY is set. */
-  solanaX402Mode: (process.env.SOLANA_X402_MODE ?? "").toLowerCase(),
+  /** Set to 1 to skip on-chain x402 while keeping the key in env (escape hatch). */
+  solanaX402Disable: process.env.SOLANA_X402_DISABLE === "1",
   /** Set to `mock` to skip TRON tx verification. Default is on-chain verification. */
   tronRepaymentMode: (process.env.TRON_REPAYMENT_MODE ?? "real").toLowerCase(),
   tronRpcUrl: process.env.TRON_RPC_URL ?? "https://nile.trongrid.io",
@@ -24,9 +24,21 @@ export function isMockAi() {
   return !serverEnv.geminiApiKey;
 }
 
+/** True when we cannot or must not run Faremeter + on-chain x402 (no key, or explicit disable). */
 export function isMockSolanaX402() {
-  if (serverEnv.solanaX402Mode === "mock") return true;
+  if (serverEnv.solanaX402Disable) return true;
   return !serverEnv.solanaAgentPrivateKey;
+}
+
+/** Why the server is skipping real Solana x402 (for mock payloads + UI hints). */
+export function solanaX402MockReason(): string {
+  if (serverEnv.solanaX402Disable) {
+    return "SOLANA_X402_DISABLE=1 — remove it to allow on-chain x402 when SOLANA_AGENT_PRIVATE_KEY is set.";
+  }
+  if (!serverEnv.solanaAgentPrivateKey) {
+    return "SOLANA_AGENT_PRIVATE_KEY is missing or empty — the server has no wallet to sign USDC transfers. Restart dev after editing .env.";
+  }
+  return "Solana x402 is not running on-chain.";
 }
 
 export function isMockTronRepay() {

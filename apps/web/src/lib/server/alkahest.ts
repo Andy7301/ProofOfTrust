@@ -1,25 +1,52 @@
+import { makeClient } from "alkahest-ts";
 import { createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
 import { isMockAlkahest, serverEnv } from "./env";
 
-/** Lightweight health signal for Alkahest / Base Sepolia (no contract calls in MVP). */
-export async function optionalAlkahestRef(): Promise<string | undefined> {
+export type AlkahestPurchasePayload = {
+  requestId: string;
+  userId: string;
+  paid: boolean;
+  solanaTx?: string;
+  amount: number;
+  targetService: string;
+  x402Status?: string;
+  /** Short excerpt for attestation payload (keep small for gas) */
+  resultPreview?: string;
+};
+
+/**
+ * Writes a JSON payload to chain via Alkahest StringObligation on Base Sepolia (EAS attestation).
+ * Returns EAS uid + tx hash for audit; on failure logs and returns undefined (purchase flow continues).
+ */
+export async function recordAlkahestPurchaseAttestation(
+  payload: AlkahestPurchasePayload
+): Promise<string | undefined> {
   if (isMockAlkahest()) return undefined;
+
   const pk = serverEnv.alkahestPrivateKey;
   const rpc = serverEnv.alkahestRpcUrl;
   if (!pk || !rpc) return undefined;
 
   try {
     const account = privateKeyToAccount(pk);
-    const client = createWalletClient({
+    const walletClient = createWalletClient({
       account,
       chain: baseSepolia,
       transport: http(rpc)
     });
-    const chainId = await client.getChainId();
-    return `alkahest:base-sepolia:${chainId}:${account.address}`;
-  } catch {
+    const client = makeClient(walletClient);
+    const { hash, attested } = await client.stringObligation.doObligationJson({
+      kind: "proof-of-trust/purchase",
+      ...payload,
+      at: new Date().toISOString()
+    });
+    const uid = attested?.uid;
+    if (!uid) return `tx:${hash}`;
+    return `eas:${uid}:tx:${hash}`;
+  } catch (err) {
+    console.error("[alkahest] recordAlkahestPurchaseAttestation failed", err);
     return undefined;
   }
 }

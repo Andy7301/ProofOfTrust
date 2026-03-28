@@ -8,12 +8,12 @@ import type {
   User
 } from "@proof/domain";
 import { extractPurchaseSignals } from "./ai";
-import { optionalAlkahestRef } from "./alkahest";
+import { recordAlkahestPurchaseAttestation } from "./alkahest";
 import { buildApproval, decideRequest } from "./decision";
 import { loadDb, mutateDb } from "./db";
 import { genId, nowIso } from "./ids";
 import { eventApproved, eventRejected } from "./reputation";
-import { optionalAuditPieceCid } from "./synapse";
+import { uploadPurchaseAuditToFilecoin } from "./synapse";
 
 function patchRequest(db: { requests: PurchaseRequest[] }, id: string, patch: Partial<PurchaseRequest>) {
   const i = db.requests.findIndex((r) => r.id === id);
@@ -108,8 +108,24 @@ async function runPurchasePipelineSteps(requestId: string): Promise<void> {
   const { executePaidFetch } = await import("./x402-pay");
   const paid = await executePaidFetch(req3.targetService);
 
-  const alkahestRef = await optionalAlkahestRef();
-  const auditPieceCid = await optionalAuditPieceCid({ requestId });
+  const attestationPayload = {
+    requestId: req3.id,
+    userId: req3.userId,
+    paid: paid.ok,
+    solanaTx: paid.transactionSignature,
+    amount: req3.requestedAmount,
+    targetService: req3.targetService,
+    x402Status: paid.x402Status,
+    resultPreview: paid.bodyText.slice(0, 800)
+  };
+
+  const [alkahestRef, auditPieceCid] = await Promise.all([
+    recordAlkahestPurchaseAttestation(attestationPayload),
+    uploadPurchaseAuditToFilecoin({
+      ...attestationPayload,
+      description: req3.description
+    })
+  ]);
 
   const resultPayload =
     paid.ok || !paid.error

@@ -1,22 +1,54 @@
+/** Read env at access time so values are never frozen before monorepo root `.env` is applied. */
+function e(name: string): string | undefined {
+  return process.env[name]?.trim() || undefined;
+}
+
 export const serverEnv = {
-  /** Empty = auto (use Gemini when GEMINI_API_KEY is set). Set to `mock` to force mock AI. */
-  aiProvider: (process.env.AI_PROVIDER ?? "").toLowerCase(),
-  geminiApiKey: process.env.GEMINI_API_KEY?.trim(),
-  solanaRpcUrl: process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com",
-  solanaAgentPrivateKey: process.env.SOLANA_AGENT_PRIVATE_KEY?.trim(),
-  /** Set to 1 to skip on-chain x402 while keeping the key in env (escape hatch). */
-  solanaX402Disable: process.env.SOLANA_X402_DISABLE === "1",
-  /** Set to `mock` to skip TRON tx verification. Default is on-chain verification. */
-  tronRepaymentMode: (process.env.TRON_REPAYMENT_MODE ?? "real").toLowerCase(),
-  tronRpcUrl: process.env.TRON_RPC_URL ?? "https://nile.trongrid.io",
-  alkahestMode: (process.env.ARKHAI_MODE ?? process.env.ALKAHEST_MODE ?? "").toLowerCase(),
-  alkahestRpcUrl: process.env.ALKAHEST_RPC_URL?.trim(),
-  alkahestPrivateKey: process.env.ALKAHEST_PRIVATE_KEY?.trim() as `0x${string}` | undefined,
-  filecoinAuditMode: (process.env.FILECOIN_AUDIT_MODE ?? "").toLowerCase(),
-  filecoinCalibrationRpcUrl: process.env.FILECOIN_CALIBRATION_RPC_URL?.trim(),
-  synapsePrivateKey: process.env.SYNAPSE_PRIVATE_KEY?.trim() as `0x${string}` | undefined,
-  filecoinApiKey: process.env.FILECOIN_API_KEY?.trim(),
-  nextPublicBaseUrl: process.env.NEXT_PUBLIC_BASE_URL?.trim() ?? "http://localhost:3000"
+  get aiProvider() {
+    return (process.env.AI_PROVIDER ?? "").toLowerCase();
+  },
+  get geminiApiKey() {
+    return e("GEMINI_API_KEY");
+  },
+  get solanaRpcUrl() {
+    return process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
+  },
+  get solanaAgentPrivateKey() {
+    return e("SOLANA_AGENT_PRIVATE_KEY");
+  },
+  get solanaX402Disable() {
+    return process.env.SOLANA_X402_DISABLE === "1";
+  },
+  get tronRepaymentMode() {
+    return (process.env.TRON_REPAYMENT_MODE ?? "real").toLowerCase();
+  },
+  get tronRpcUrl() {
+    return process.env.TRON_RPC_URL ?? "https://nile.trongrid.io";
+  },
+  get alkahestMode() {
+    return (process.env.ARKHAI_MODE ?? process.env.ALKAHEST_MODE ?? "").toLowerCase();
+  },
+  get alkahestRpcUrl() {
+    return e("ALKAHEST_RPC_URL");
+  },
+  get alkahestPrivateKey() {
+    return e("ALKAHEST_PRIVATE_KEY") as `0x${string}` | undefined;
+  },
+  get filecoinAuditMode() {
+    return (process.env.FILECOIN_AUDIT_MODE ?? "").toLowerCase();
+  },
+  get filecoinCalibrationRpcUrl() {
+    return e("FILECOIN_CALIBRATION_RPC_URL");
+  },
+  get synapsePrivateKey() {
+    return e("SYNAPSE_PRIVATE_KEY") as `0x${string}` | undefined;
+  },
+  get filecoinApiKey() {
+    return e("FILECOIN_API_KEY");
+  },
+  get nextPublicBaseUrl() {
+    return e("NEXT_PUBLIC_BASE_URL") ?? "http://localhost:3000";
+  }
 };
 
 export function isMockAi() {
